@@ -1,0 +1,101 @@
+name: Build and Release Cursor Plugin
+
+on:
+  workflow_dispatch:
+    inputs:
+      ecc_repo:
+        description: ECC repository URL
+        required: false
+        default: https://github.com/affaan-m/everything-claude-code.git
+      source_dir:
+        description: Local source directory for cloned ECC
+        required: false
+        default: src/everything-claude-code
+      destination_dir:
+        description: Converted plugin output directory
+        required: false
+        default: dst
+      publish_release:
+        description: Create GitHub release
+        required: false
+        type: boolean
+        default: true
+      release_tag:
+        description: Release tag (leave empty to auto-generate)
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Pull latest ECC repository
+        run: |
+          rm -rf "${{ inputs.source_dir }}"
+          npm run clone:src -- "${{ inputs.ecc_repo }}" "${{ inputs.source_dir }}"
+
+      - name: Convert ECC to Cursor plugin
+        run: npm run build -- "${{ inputs.source_dir }}" "${{ inputs.destination_dir }}"
+
+      - name: Resolve plugin metadata
+        id: meta
+        run: |
+          node -e "const fs=require('fs'); const p='${{ inputs.destination_dir }}/.cursor-plugin/plugin.json'; const j=JSON.parse(fs.readFileSync(p,'utf8')); process.stdout.write('plugin_version='+j.version+'\nplugin_name='+j.name+'\n');" >> "$GITHUB_OUTPUT"
+
+      - name: Create plugin zip package
+        id: pack
+        run: |
+          ZIP_NAME="${{ steps.meta.outputs.plugin_name }}-${{ steps.meta.outputs.plugin_version }}.zip"
+          (cd "${{ inputs.destination_dir }}" && zip -r "../${ZIP_NAME}" .)
+          echo "zip_name=${ZIP_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cursor-plugin-package
+          path: ${{ steps.pack.outputs.zip_name }}
+          if-no-files-found: error
+
+      - name: Generate release tag
+        if: ${{ inputs.publish_release }}
+        id: tag
+        env:
+          CUSTOM_TAG: ${{ inputs.release_tag }}
+          PLUGIN_VERSION: ${{ steps.meta.outputs.plugin_version }}
+        run: |
+          if [ -n "$CUSTOM_TAG" ]; then
+            echo "tag=$CUSTOM_TAG" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=cursor-plugin-v${PLUGIN_VERSION}-${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish GitHub release
+        if: ${{ inputs.publish_release }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: Cursor Plugin ${{ steps.meta.outputs.plugin_version }}
+          generate_release_notes: true
+          body: |
+            Converted plugin package from latest ECC source.
+
+            Installation:
+            1. Download `${{ steps.pack.outputs.zip_name }}` from release assets.
+            2. Extract to `.cursor/plugin/local/<plugin-name>/`.
+            3. Restart Cursor and enable local plugin.
+          files: ${{ steps.pack.outputs.zip_name }}

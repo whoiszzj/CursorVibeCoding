@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Generated source clone (upstream ECC)
+src/everything-claude-code/
+
+# Generated Cursor plugin output
+dst/
+
+# Build/release artifacts
+*.zip
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
+.env
+.env.*
+
+# OS/editor noise
+.DS_Store
+Thumbs.db

@@ -1,0 +1,17 @@
+{
+  "name": "ecc-to-cursor-converter",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Convert everything-claude-code assets into Cursor plugin format.",
+  "scripts": {
+    "clone:src": "node scripts/clone-source.js",
+    "locate:src": "node scripts/locate-ecc.js",
+    "convert:skills": "node scripts/convert-skills.js",
+    "convert:agents": "node scripts/convert-agents.js",
+    "convert:commands": "node scripts/convert-commands.js",
+    "convert:rules": "node scripts/convert-rules.js",
+    "convert:hooks": "node scripts/convert-hooks.js",
+    "build": "node scripts/build-cursor-plugin.js",
+    "install:cursor": "powershell -ExecutionPolicy Bypass -File scripts/install-dst-to-cursor.ps1"
+  }
+}

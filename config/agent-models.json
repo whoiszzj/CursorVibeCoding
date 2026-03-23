@@ -1,0 +1,12 @@
+{
+  "categories": {
+    "planning": "claude-4.6-opus-high-thinking",
+    "default": "gpt-5.3-codex",
+    "doc": "gpt-5.4-medium"
+  },
+  "matches": {
+    "planning": ["planner", "architect"],
+    "doc": ["doc-updater", "docs-lookup"]
+  },
+  "overrides": {}
+}
