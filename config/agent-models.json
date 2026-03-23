@@ -1,7 +1,7 @@
 {
   "categories": {
     "planning": "claude-4.6-opus-high-thinking",
-    "default": "gpt-5.3-codex",
+    "default": "inherit",
     "doc": "gpt-5.4-medium"
   },
   "matches": {
